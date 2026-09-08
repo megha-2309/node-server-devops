@@ -1,0 +1,59 @@
+````yaml
+name: Deploy NodeJS on Local VM
+
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v4
+
+      - name: Deploy on Local VM
+        uses: appleboy/ssh-action@v1.0.3
+        with:
+          host: ${{ secrets.HOST }}
+          username: megha
+          key: ${{ secrets.PRIVATE_KEY }}
+
+          script: |
+            cd /home/megha/node-server-devops
+
+            git pull origin main
+
+            npm install
+
+            pm2 restart node-server || pm2 start index.js --name node-server
+
+**Lekin ek bahut important point:** GitHub Actions ka runner internet par GitHub ka server hota hai. Tumhari VM ka IP `192.168.122.34` **private IP** hai, isliye GitHub Actions directly us IP par SSH nahi kar paayega.
+
+Abhi hum **local VM ko deployment server** bana rahe hain, but GitHub Actions → VM connection ke liye networking ka next part configure karna padega.
+
+Aur ek correction: tumhari VM me username `megha` hai, isliye tutorial ka:
+
+```yaml
+username: ubuntu
+````
+
+❌ nahi
+
+Tumhare case me:
+
+```yaml
+username: megha
+```
+
+✅
+
+Abhi **PM2 install karne ke liye jo EACCES error aaya tha**, uska fix bhi:
+
+```bash
+sudo npm install pm2 -g
+```
+
+kar lo. Uske baad hum **PM2 → SSH → GitHub Actions → local VM** ko ek-ek step me connect karenge.
